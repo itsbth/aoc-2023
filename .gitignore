@@ -1,0 +1,5 @@
+.sessionid
+INPUT
+# 3rd-party implementations for benchmarking
+*.sharp.*
+.vscode
