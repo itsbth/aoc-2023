@@ -1,10 +1,12 @@
-package main
+package d3
 
 import (
 	"bufio"
-	"log"
-	"os"
+	"fmt"
+	"io"
 	"strconv"
+
+	"github.com/itsbth/aoc-2023/runner"
 )
 
 func isSymbol(b byte) bool {
@@ -13,17 +15,11 @@ func isSymbol(b byte) bool {
 
 const MAX_LINE = 140
 
-func main() {
-	inputFile := "input"
-	if len(os.Args) > 1 {
-		inputFile = os.Args[1]
-	}
-	file, err := os.Open(inputFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
+type solver struct{}
 
+var _ runner.Solver = solver{}
+
+func (solver) Solve(input io.Reader) (int, int, error) {
 	adj := make([][]bool, MAX_LINE)
 	for i := 0; i < MAX_LINE; i++ {
 		adj[i] = make([]bool, MAX_LINE)
@@ -40,7 +36,7 @@ func main() {
 	nums := make([]num, 0)
 	gears := make([]gear, 0)
 
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(input)
 	line := 0
 	for scanner.Scan() {
 		bytes := scanner.Bytes()
@@ -53,7 +49,7 @@ func main() {
 				}
 				val, err := strconv.Atoi(string(bytes[start:i]))
 				if err != nil {
-					log.Fatalf("failed to parse number: %v", err)
+					return 0, 0, fmt.Errorf("failed to parse number: %v", err)
 				}
 				nums = append(nums, num{
 					x:   start,
@@ -106,9 +102,12 @@ func main() {
 		}
 		if count == 2 {
 			sumRatio += val
-			log.Printf("DBG: found %d at %d,%d", val, g.x, g.y)
 		}
 	}
-	log.Printf("Part 1: %d", sum)
-	log.Printf("Part 2: %d", sumRatio)
+
+	return sum, sumRatio, nil
+}
+
+func init() {
+	runner.Register(2023, 3, solver{})
 }

@@ -1,4 +1,4 @@
-package main
+package d2_test
 
 import (
 	"testing"

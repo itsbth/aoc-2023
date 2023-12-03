@@ -1,10 +1,10 @@
-package main
+package d1
 
 import (
 	"bufio"
-	"fmt"
-	"log"
-	"os"
+	"io"
+
+	"github.com/itsbth/aoc-2023/runner"
 )
 
 var MAP = []string{
@@ -71,16 +71,14 @@ outer2:
 	return sum1, sum2
 }
 
-func main() {
-	f, err := os.Open("INPUT")
-	if err != nil {
-		log.Panicf("failed to open file: %v", err)
-	}
-	defer f.Close()
+type solver struct{}
 
+var _ runner.Solver = solver{}
+
+func (solver) Solve(input io.Reader) (int, int, error) {
 	total1, total2 := uint64(0), uint64(0)
 
-	scanner := bufio.NewScanner(f)
+	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
 		line := scanner.Text()
 		c1, c2 := sum(line)
@@ -88,6 +86,9 @@ func main() {
 		total2 += c2
 	}
 
-	fmt.Printf("Part 1: %d\n", total1)
-	fmt.Printf("Part 2: %d\n", total2)
+	return int(total1), int(total2), nil
+}
+
+func init() {
+	runner.Register(2023, 1, solver{}, "default")
 }

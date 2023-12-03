@@ -1,4 +1,5 @@
 .sessionid
+.cache
 INPUT
 # 3rd-party implementations for benchmarking
 *.sharp.*

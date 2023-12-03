@@ -1,12 +1,14 @@
-package main
+package d2
 
 import (
 	"bufio"
 	"errors"
+	"io"
 	"log"
-	"os"
 	"strconv"
 	"strings"
+
+	"github.com/itsbth/aoc-2023/runner"
 )
 
 type game struct {
@@ -111,24 +113,17 @@ func (g *game) power() int {
 	return power
 }
 
-func main() {
-	inputFile := "INPUT"
-	if len(os.Args) > 1 {
-		inputFile = os.Args[1]
-	}
+type solver struct{}
 
-	f, err := os.Open(inputFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
+var _ runner.Solver = solver{}
 
+func (solver) Solve(input io.Reader) (int, int, error) {
 	games := make([]game, 0)
-	scanner := bufio.NewScanner(f)
+	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
 		g, err := parseGame2(scanner.Text())
 		if err != nil {
-			log.Fatalf("failed to parse game: %v", err)
+			return 0, 0, err
 		}
 		games = append(games, g)
 	}
@@ -152,6 +147,9 @@ func main() {
 		power += g.power()
 	}
 
-	log.Printf("sum of possible game ids: %d", sum)
-	log.Printf("total power: %d", power)
+	return sum, power, nil
+}
+
+func init() {
+	runner.Register(2023, 2, solver{})
 }

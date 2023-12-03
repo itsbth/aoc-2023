@@ -3,7 +3,8 @@
     "rakudo@latest",
     "go@latest",
     "golangci-lint@latest",
-    "ruby@latest"
+    "ruby@latest",
+    "gofumpt@latest"
   ],
   "shell": {
     "init_hook": [
