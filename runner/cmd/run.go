@@ -14,19 +14,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	year            int
-	day             int
-	part            int    = 0 // 0 = both, 1 = part 1, 2 = part 2
-	variant         string = "default"
-	copyToClipboard int    // 0 = none, 1 = part 1, 2 = part 2
-	sample          int
-	sampleFile      string
-	listVariants    bool
-	cacheDir        string
-	token           string
-	tokenFilePath   string
-)
+type RunConfig struct {
+	Year            int
+	Day             int
+	Part            int    // 0 = both, 1 = part 1, 2 = part 2
+	Variant         string // "default"
+	CopyToClipboard int    // 0 = none, 1 = part 1, 2 = part 2
+	Sample          int
+	SampleFile      string
+	ListVariants    bool
+	CacheDir        string
+	Token           string
+	TokenFilePath   string
+}
+
+var config RunConfig
 
 func printVariants(cmd *cobra.Command, year, day int) {
 	cmd.Printf("Variants for %d-%d:\n", year, day)
@@ -36,12 +38,12 @@ func printVariants(cmd *cobra.Command, year, day int) {
 }
 
 func getToken() (string, error) {
-	if token != "" {
-		return token, nil
+	if config.Token != "" {
+		return config.Token, nil
 	}
 
-	if tokenFilePath != "" {
-		f, err := os.Open(tokenFilePath)
+	if config.TokenFilePath != "" {
+		f, err := os.Open(config.TokenFilePath)
 		if err != nil {
 			return "", err
 		}
@@ -70,19 +72,19 @@ var runCmd = &cobra.Command{
 	Short: "Run a solution",
 	Long:  `Run a solution`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if listVariants {
-			printVariants(cmd, year, day)
+		if config.ListVariants {
+			printVariants(cmd, config.Year, config.Day)
 			return
 		}
 
-		solver := runner.Get(year, day, variant)
+		solver := runner.Get(config.Year, config.Day, config.Variant)
 		if solver == nil {
-			cmd.PrintErrf("No solver found for %d-%d-%s\n", year, day, variant)
-			printVariants(cmd, year, day)
+			cmd.PrintErrf("No solver found for %d-%d-%s\n", config.Year, config.Day, config.Variant)
+			printVariants(cmd, config.Year, config.Day)
 			return
 		}
 
-		inputPath := path.Join(cacheDir, "input", fmt.Sprintf("%d-%d.txt", year, day))
+		inputPath := path.Join(config.CacheDir, "input", fmt.Sprintf("%d-%d.txt", config.Year, config.Day))
 		if _, err := os.Stat(inputPath); os.IsNotExist(err) {
 			token, err := getToken()
 			if err != nil {
@@ -90,7 +92,7 @@ var runCmd = &cobra.Command{
 				return
 			}
 
-			content, err := DownloadInput(year, day, token)
+			content, err := DownloadInput(config.Year, config.Day, token)
 			if err != nil {
 				cmd.PrintErrf("Error downloading input: %v\n", err)
 				return
@@ -115,8 +117,8 @@ var runCmd = &cobra.Command{
 				return
 			}
 		}
-		if sampleFile != "" {
-			inputPath = sampleFile
+		if config.SampleFile != "" {
+			inputPath = config.SampleFile
 		}
 		f, err := os.Open(inputPath)
 		if err != nil {
@@ -125,20 +127,23 @@ var runCmd = &cobra.Command{
 		}
 		defer f.Close()
 
+		start := time.Now()
 		part1, part2, err := solver.Solve(f)
+		duration := time.Since(start)
 		if err != nil {
 			cmd.PrintErrf("Error solving: %v\n", err)
 			return
 		}
+		cmd.Printf("Solved in %s\n", duration)
 
-		if part == 0 || part == 1 {
+		if config.Part == 0 || config.Part == 1 {
 			cmd.Printf("Part 1: %d\n", part1)
 		}
-		if part == 0 || part == 2 {
+		if config.Part == 0 || config.Part == 2 {
 			cmd.Printf("Part 2: %d\n", part2)
 		}
 
-		if copyToClipboard == 1 {
+		if config.CopyToClipboard == 1 {
 			err = copyStringToClipboard(fmt.Sprintf("%d", part1))
 			if err != nil {
 				cmd.PrintErrf("Error copying to clipboard: %v\n", err)
@@ -146,7 +151,7 @@ var runCmd = &cobra.Command{
 			}
 		}
 
-		if copyToClipboard == 2 {
+		if config.CopyToClipboard == 2 {
 			err = copyStringToClipboard(fmt.Sprintf("%d", part2))
 			if err != nil {
 				cmd.PrintErrf("Error copying to clipboard: %v\n", err)
@@ -160,20 +165,20 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 
 	now := time.Now()
-	year = now.Year()
-	day = now.Day()
+	year := now.Year()
+	day := now.Day()
 
-	runCmd.Flags().IntVarP(&year, "year", "y", year, "Year to run")
-	runCmd.Flags().IntVarP(&day, "day", "d", day, "Day to run")
-	runCmd.Flags().IntVarP(&part, "part", "p", 0, "Part to run")
-	runCmd.Flags().IntVarP(&sample, "sample", "s", 0, "Run on sample input")
-	runCmd.Flags().StringVarP(&sampleFile, "sample-file", "i", "", "Sample input file")
-	runCmd.Flags().IntVarP(&copyToClipboard, "copy", "x", 0, "Copy result to clipboard (1 = part 1, 2 = part 2)")
-	runCmd.Flags().StringVarP(&variant, "variant", "v", "default", "Variant to run")
-	runCmd.Flags().BoolVarP(&listVariants, "list-variants", "l", false, "List variants")
-	runCmd.Flags().StringVarP(&cacheDir, "cache-dir", "c", ".cache", "Cache directory")
+	runCmd.Flags().IntVarP(&config.Year, "year", "y", year, "Year to run")
+	runCmd.Flags().IntVarP(&config.Day, "day", "d", day, "Day to run")
+	runCmd.Flags().IntVarP(&config.Part, "part", "p", 0, "Part to run")
+	runCmd.Flags().IntVarP(&config.Sample, "sample", "s", 0, "Run on sample input")
+	runCmd.Flags().StringVarP(&config.SampleFile, "sample-file", "i", "", "Sample input file")
+	runCmd.Flags().IntVarP(&config.CopyToClipboard, "copy", "x", 0, "Copy result to clipboard (1 = part 1, 2 = part 2)")
+	runCmd.Flags().StringVarP(&config.Variant, "variant", "v", "default", "Variant to run")
+	runCmd.Flags().BoolVarP(&config.ListVariants, "list-variants", "l", false, "List variants")
+	runCmd.Flags().StringVarP(&config.CacheDir, "cache-dir", "c", ".cache", "Cache directory")
 
 	// token (or token file) is required for downloading inputs
-	runCmd.Flags().StringVarP(&token, "token", "t", "", "Session token")
-	runCmd.Flags().StringVarP(&tokenFilePath, "token-file", "f", ".sessionid", "Session token file")
+	runCmd.Flags().StringVarP(&config.Token, "token", "t", "", "Session token")
+	runCmd.Flags().StringVarP(&config.TokenFilePath, "token-file", "f", ".sessionid", "Session token file")
 }
