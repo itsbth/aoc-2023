@@ -21,6 +21,7 @@ var (
 	variant         string = "default"
 	copyToClipboard int    // 0 = none, 1 = part 1, 2 = part 2
 	sample          int
+	sampleFile      string
 	listVariants    bool
 	cacheDir        string
 	token           string
@@ -114,7 +115,9 @@ var runCmd = &cobra.Command{
 				return
 			}
 		}
-
+		if sampleFile != "" {
+			inputPath = sampleFile
+		}
 		f, err := os.Open(inputPath)
 		if err != nil {
 			cmd.PrintErrf("Error opening input file: %v\n", err)
@@ -164,6 +167,7 @@ func init() {
 	runCmd.Flags().IntVarP(&day, "day", "d", day, "Day to run")
 	runCmd.Flags().IntVarP(&part, "part", "p", 0, "Part to run")
 	runCmd.Flags().IntVarP(&sample, "sample", "s", 0, "Run on sample input")
+	runCmd.Flags().StringVarP(&sampleFile, "sample-file", "i", "", "Sample input file")
 	runCmd.Flags().IntVarP(&copyToClipboard, "copy", "x", 0, "Copy result to clipboard (1 = part 1, 2 = part 2)")
 	runCmd.Flags().StringVarP(&variant, "variant", "v", "default", "Variant to run")
 	runCmd.Flags().BoolVarP(&listVariants, "list-variants", "l", false, "List variants")
