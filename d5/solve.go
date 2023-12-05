@@ -3,7 +3,6 @@ package d5
 import (
 	"bufio"
 	"io"
-	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -82,31 +81,19 @@ func (solver) Solve(input io.Reader) (int, int, error) {
 			end:   seeds[i] + seeds[i+1] + 1,
 		})
 	}
-	tasks := make(chan span)
-	results := make(chan []span)
-	for i := 0; i < runtime.NumCPU(); i++ {
-		go func() {
-			for task := range tasks {
-				ranges := []span{task}
-				for _, mapping := range mappings {
-					newRanges := []span{}
-					for _, r := range ranges {
-						newRanges = append(newRanges, mapping.translateRange(r)...)
-					}
-					ranges = newRanges
-				}
-				results <- ranges
+	solved := []span{}
+	for _, task := range ranges {
+		ranges := []span{task}
+		for _, mapping := range mappings {
+			newRanges := []span{}
+			for _, r := range ranges {
+				newRanges = append(newRanges, mapping.translateRange(r)...)
 			}
-		}()
+			ranges = newRanges
+		}
+		solved = append(solved, ranges...)
 	}
-	for _, r := range ranges {
-		tasks <- r
-	}
-	close(tasks)
-	var solved []span
-	for i := 0; i < len(ranges); i++ {
-		solved = append(solved, <-results...)
-	}
+
 	slices.SortFunc(solved, func(a, b span) int {
 		return a.start - b.start
 	})
