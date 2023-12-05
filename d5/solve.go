@@ -3,7 +3,7 @@ package d5
 import (
 	"bufio"
 	"io"
-	"log"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -79,33 +79,38 @@ func (solver) Solve(input io.Reader) (int, int, error) {
 	for i := 0; i < len(seeds); i += 2 {
 		ranges = append(ranges, span{
 			start: seeds[i],
-			end:   seeds[i] + seeds[i+1],
+			end:   seeds[i] + seeds[i+1] + 1,
 		})
 	}
-	// merge the mapping layers
-	merged := mapping{}
-	for _, mapping := range mappings[0].entries {
-		stack := []entry{mapping}
-		for i := 1; i < len(mappings); i++ {
-			newStack := []entry{}
-			current:=
-			for _, e := range mappings[i].entries {
-				for _, s := range stack {
-					if e.start >= s.end || e.end <= s.start {
-						continue
+	tasks := make(chan span)
+	results := make(chan []span)
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go func() {
+			for task := range tasks {
+				ranges := []span{task}
+				for _, mapping := range mappings {
+					newRanges := []span{}
+					for _, r := range ranges {
+						newRanges = append(newRanges, mapping.translateRange(r)...)
 					}
-					newStack = append(newStack, entry{
-						start:  e.start,
-						end:    e.end,
-						offset: e.offset + s.offset,
-					})
+					ranges = newRanges
 				}
+				results <- ranges
 			}
-		}
-
-
+		}()
 	}
-	return locations[0], ranges[0].start, nil
+	for _, r := range ranges {
+		tasks <- r
+	}
+	close(tasks)
+	var solved []span
+	for i := 0; i < len(ranges); i++ {
+		solved = append(solved, <-results...)
+	}
+	slices.SortFunc(solved, func(a, b span) int {
+		return a.start - b.start
+	})
+	return locations[0], solved[0].start, nil
 }
 
 func init() {
@@ -149,38 +154,38 @@ func (m *mapping) translate(source int) int {
 	return source
 }
 
-// detect overlapping ranges, potentially splitting them and translating the overlapping parts
-// variables: ranges (result), current (untranslated section)
 func (m *mapping) translateRange(from span) []span {
-	newRanges := []span{}
-	current := from
+	var out []span
+	start := from.start
+	end := from.end
+
 	for _, e := range m.entries {
-		if current.start >= e.end {
+		if start >= end {
+			break
+		}
+		if start >= e.end || end <= e.start {
 			continue
 		}
-		if current.end <= e.start {
-			newRanges = append(newRanges, current)
-			continue
-		}
-		if current.start < e.start {
-			newRanges = append(newRanges, span{
-				start: current.start,
+		// some overlap. split into before, overlap, after (the first and last of which may be empty)
+		if start < e.start {
+			out = append(out, span{
+				start: start,
 				end:   e.start,
 			})
 		}
-		if current.end > e.end {
-			newRanges = append(newRanges, span{
-				start: e.end,
-				end:   current.end,
-			})
-		}
-		current = span{
-			start: e.offset + current.start,
-			end:   e.offset + current.end,
-		}
+		out = append(out, span{
+			start: max(start, e.start) + e.offset,
+			end:   min(end, e.end) + e.offset,
+		})
+		start = max(start, e.end)
 	}
-	newRanges = append(newRanges, current)
-	return newRanges
+	if start <= end {
+		out = append(out, span{
+			start: start,
+			end:   end,
+		})
+	}
+	return out
 }
 
 type span struct {
