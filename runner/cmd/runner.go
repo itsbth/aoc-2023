@@ -9,6 +9,7 @@ import (
 	_ "github.com/itsbth/aoc-2023/d3"
 	_ "github.com/itsbth/aoc-2023/d4"
 	_ "github.com/itsbth/aoc-2023/d5"
+	_ "github.com/itsbth/aoc-2023/d6"
 	// END IMPORTS
 )
 
