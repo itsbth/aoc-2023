@@ -162,7 +162,6 @@ func (solver) Solve(input io.Reader) (int, int, error) {
 	area := 0
 	for y := 0; y < len(pipes); y++ {
 		inside := false
-		lastTurn := byte(' ')
 		for x := 0; x < len(pipes[0]); x++ {
 			// if !inside and next[x,y] is set, we're inside
 			// set entered to 1 or 2 depending on direction
@@ -170,31 +169,9 @@ func (solver) Solve(input io.Reader) (int, int, error) {
 
 			if _, ok := next[pos{x, y}]; ok {
 				curr := pipes[y][x]
-				if curr == '|' {
+				if curr == '|' || curr == 'L' || curr == 'J' {
 					// crosses a vertical pipe; toggle inside
 					inside = !inside
-				}
-				if curr == 'L' {
-					// entered from the top
-					lastTurn = 'L'
-					inside = !inside
-				}
-				if curr == 'F' {
-					// entered from the bottom
-					lastTurn = 'F'
-					inside = !inside
-				}
-				if curr == '7' {
-					// exiting down
-					if lastTurn == 'F' {
-						inside = !inside
-					}
-				}
-				if curr == 'J' {
-					// exiting up
-					if lastTurn == 'L' {
-						inside = !inside
-					}
 				}
 			} else if inside {
 				area++
