@@ -3,7 +3,6 @@ package d9
 import (
 	"bufio"
 	"io"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -14,27 +13,23 @@ type solver struct{}
 
 var _ runner.Solver = solver{}
 
-func predict(series []int) int {
+func predict(series []int) (int, int) {
 	// recursively find the difference between all numbers in the series
 	// until it's all zeroes, then build the next number in the series
 	// by adding the difference to the last number in the series
 	// return the next number in the series
-	var deltas []int
-	for i := 1; i < len(series); i++ {
-		deltas = append(deltas, series[i]-series[i-1])
-	}
-	dv := deltas[0]
+	deltas := make([]int, len(series)-1)
 	allSame := true
-	for _, d := range deltas {
-		if d != dv {
-			allSame = false
-			break
-		}
+	for i := 1; i < len(series); i++ {
+		delta := series[i] - series[i-1]
+		deltas[i-1] = delta
+		allSame = allSame && delta == deltas[0]
 	}
 	if allSame {
-		return series[len(series)-1] + dv
+		return series[0] - deltas[0], series[len(series)-1] + deltas[0]
 	}
-	return series[len(series)-1] + predict(deltas)
+	pl, pu := predict(deltas)
+	return series[0] - pl, series[len(series)-1] + pu
 }
 
 func (solver) Solve(input io.Reader) (int, int, error) {
@@ -55,14 +50,11 @@ func (solver) Solve(input io.Reader) (int, int, error) {
 	}
 
 	part1 := 0
-	for _, s := range series {
-		part1 += predict(s)
-	}
-
 	part2 := 0
 	for _, s := range series {
-		slices.Reverse(s)
-		part2 += predict(s)
+		p2, p1 := predict(s)
+		part1 += p1
+		part2 += p2
 	}
 
 	return part1, part2, nil
