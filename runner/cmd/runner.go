@@ -6,6 +6,7 @@ import (
 	// START IMPORTS
 	_ "github.com/itsbth/aoc-2023/d1"
 	_ "github.com/itsbth/aoc-2023/d10"
+	_ "github.com/itsbth/aoc-2023/d11"
 	_ "github.com/itsbth/aoc-2023/d2"
 	_ "github.com/itsbth/aoc-2023/d3"
 	_ "github.com/itsbth/aoc-2023/d4"
