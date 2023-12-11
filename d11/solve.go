@@ -37,63 +37,38 @@ func (solver) Solve(input io.Reader) (int, int, error) {
 		starY[s.y] = true
 	}
 
+	// cumsum of starless rows/cols
 	translateX := make([]int, y)
 	translateY := make([]int, y)
 	translateX[0] = 0
 	translateY[0] = 0
 
 	for i := 1; i < y; i++ {
-		if starX[i] {
+		if !starX[i] {
 			translateX[i] = translateX[i-1] + 1
 		} else {
-			translateX[i] = translateX[i-1] + 2
+			translateX[i] = translateX[i-1]
 		}
-		if starY[i] {
+		if !starY[i] {
 			translateY[i] = translateY[i-1] + 1
 		} else {
-			translateY[i] = translateY[i-1] + 2
+			translateY[i] = translateY[i-1]
 		}
 	}
 
 	part1 := 0
-
-	for idx, s1 := range stars {
-		for _, s2 := range stars[idx+1:] {
-			dist := abs(
-				translateX[s1.x]-translateX[s2.x],
-			) + abs(
-				translateY[s1.y]-translateY[s2.y],
-			)
-			part1 += dist
-		}
-	}
-
-	translateX[0] = 0
-	translateY[0] = 0
-
-	for i := 1; i < y; i++ {
-		if starX[i] {
-			translateX[i] = translateX[i-1] + 1
-		} else {
-			translateX[i] = translateX[i-1] + 1_000_000
-		}
-		if starY[i] {
-			translateY[i] = translateY[i-1] + 1
-		} else {
-			translateY[i] = translateY[i-1] + 1_000_000
-		}
-	}
-
 	part2 := 0
 
 	for idx, s1 := range stars {
 		for _, s2 := range stars[idx+1:] {
-			dist := abs(
+			base := abs(s1.x-s2.x) + abs(s1.y-s2.y)
+			expanded := abs(
 				translateX[s1.x]-translateX[s2.x],
 			) + abs(
 				translateY[s1.y]-translateY[s2.y],
 			)
-			part2 += dist
+			part1 += base + expanded
+			part2 += base + (expanded * (1_000_000 - 1))
 		}
 	}
 
